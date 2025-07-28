@@ -1,10 +1,14 @@
 package com.netra.authrex.services;
 
 import com.netra.authrex.daos.IdentityDao;
+import com.netra.authrex.dtos.IdentityRoleDto;
+import com.netra.authrex.dtos.IdentitySearchParam;
+import com.netra.authrex.dtos.IdentityWithRolesDto;
 import com.netra.commons.models.Identity;
 import com.netra.commons.models.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -57,7 +61,7 @@ public class IdentityService implements UserDetailsService {
     }
 
 
-    private boolean isPasswordExpired(Identity user) {
+    public boolean isPasswordExpired(Identity user) {
         return user.getPasswordLastChanged()
                 .isBefore(LocalDateTime.now().minusDays(Long.getLong(passwordExpiryDays, 90)));
     }
@@ -66,5 +70,9 @@ public class IdentityService implements UserDetailsService {
         if (!user.getDomainCode().equals(requestedDomain)) {
             throw new UsernameNotFoundException("User not found in specified domain "+requestedDomain);
         }
+    }
+
+    public Page<IdentityWithRolesDto> findIdentities(IdentitySearchParam searchParam){
+        return identityDao.findIdentities(searchParam);
     }
 }
