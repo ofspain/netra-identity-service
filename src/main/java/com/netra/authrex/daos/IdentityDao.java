@@ -117,6 +117,13 @@ public class IdentityDao {
         return identity;
     }
 
+
+    //todo: please reanalysze the updating the password with identity itself
+    //todo: please reanalysze the updating the password with identity itself
+    //todo: please reanalysze the updating the password with identity itself
+    //todo: please reanalysze the updating the password with identity itself
+    //todo: please reanalysze the updating the password with identity itself
+    //todo: please reanalysze the updating the password with identity itself
     public Identity updateIdentity(Identity identity) {
         Long id = jdbcClient.sql("""
                 SELECT upsert_identity(
@@ -125,7 +132,7 @@ public class IdentityDao {
                 """)
                 .param(1, identity.getId())
                 .param(2, identity.getUsername())
-                .param(3, identity.getPassword())
+                .param(3, passwordEncoder.encode(identity.getPassword()))
                 .param(4, identity.getDisabled())
                 .param(5, identity.getLocked())
                 .param(6, identity.getDomainCode())
@@ -178,6 +185,40 @@ public class IdentityDao {
                 """)
                 .param(1, identityId)
                 .param(2, templateId)
+                .update();
+    }
+
+    public Optional<Identity> findById(Long id) {
+        return jdbcClient.sql("SELECT * FROM identities WHERE id = ?")
+                .param(1, id)
+                .query(new EnhancedBeanPropertyRowMapper<Identity>())
+                .optional();
+    }
+
+    public Optional<Identity> findByUsername(String username) {
+        return jdbcClient.sql("""
+                SELECT i.* FROM identities i 
+                WHERE i.username = ? AND i.locked = false
+                """)
+                .param(1, username)
+                .query(new EnhancedBeanPropertyRowMapper<Identity>())
+                .optional();
+    }
+
+    public Optional<Identity> findByUsernameAndDomain(String username, String domainCode) {
+        return jdbcClient.sql("""
+                SELECT i.* FROM identities i 
+                WHERE i.username = ? AND i.domain_code = ? AND i.locked = false
+                """)
+                .param(1, username)
+                .param(2, domainCode)
+                .query(new EnhancedBeanPropertyRowMapper<Identity>())
+                .optional();
+    }
+
+    public void updateLastLogin(Long identityId) {
+        jdbcClient.sql("UPDATE identities SET last_login = NOW() WHERE id = ?")
+                .param(1, identityId)
                 .update();
     }
 }
