@@ -9,7 +9,6 @@ import com.netra.authrex.dtos.RoleAndTemplateSearchParam;
 import com.netra.authrex.exceptions.AppDataAccessException;
 import com.netra.commons.database.EnhancedBeanPropertyRowMapper;
 import com.netra.commons.models.Role;
-import com.netra.commons.models.RoleTemplate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
