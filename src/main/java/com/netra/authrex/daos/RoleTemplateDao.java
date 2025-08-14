@@ -29,7 +29,7 @@ public class RoleTemplateDao {
     private final ObjectMapper objectMapper;
 
     public RoleTemplate createRoleTemplate(RoleTemplate template) {
-        Long id = jdbcClient.sql("SELECT upsert_role_template(NULL, ?, ?, ?)")
+        Long id = jdbcClient.sql("SELECT upsert_role_template(?, NULL, ?, ?)")
                 .param(1, template.getName())
                 .param(2, template.getDescription())
                 .param(3, template.getRoleIds().toArray(Long[]::new))
@@ -42,8 +42,8 @@ public class RoleTemplateDao {
 
     public RoleTemplate updateRoleTemplate(RoleTemplate template) {
         Long id = jdbcClient.sql("SELECT upsert_role_template(?, ?, ?, ?)")
-                .param(1, template.getId())
-                .param(2, template.getName())
+                .param(1, template.getName())
+                .param(2, template.getId())
                 .param(3, template.getDescription())
                 .param(4, template.getRoleIds().toArray(Long[]::new))
                 .query(Long.class)

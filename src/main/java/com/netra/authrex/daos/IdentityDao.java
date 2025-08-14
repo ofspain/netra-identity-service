@@ -5,6 +5,7 @@ import com.netra.authrex.dtos.IdentitySearchParam;
 import com.netra.authrex.dtos.IdentityWithRolesDto;
 import com.netra.commons.database.EnhancedBeanPropertyRowMapper;
 import com.netra.commons.models.Identity;
+import com.netra.commons.util.TraceableUuidGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -100,16 +101,18 @@ public class IdentityDao {
 
     public Identity saveIdentity(Identity identity) {
         Long id = jdbcClient.sql("""
-                SELECT upsert_identity(
-                    NULL, ?, ?, ?, ?, ?, ?
-                )
-                """)
-                .param(1, identity.getUsername())
-                .param(2, passwordEncoder.encode(identity.getPassword()))
-                .param(3, identity.getDisabled())
-                .param(4, identity.getLocked())
-                .param(5, identity.getDomainCode())
-                .param(6, identity.getPasswordLastChanged())
+            SELECT upsert_identity(
+                ?, ?, ?, ?, ?, NULL, ?, ?, ?
+            )
+        """)
+                .param(1, identity.getDomainCode())
+                .param(2, identity.getUsername())
+                .param(3, passwordEncoder.encode(identity.getPassword()))
+                .param(4, identity.getDomainType())
+                .param(5, TraceableUuidGenerator.generateTraceableUuid(identity.getDomainCode()))
+                .param(6, identity.getDisabled())
+                .param(7, identity.getLocked())
+                .param(8, identity.getPasswordLastChanged())
                 .query(Long.class)
                 .single();
 
@@ -118,33 +121,41 @@ public class IdentityDao {
     }
 
 
+
     //todo: please reanalysze the updating the password with identity itself
     //todo: please reanalysze the updating the password with identity itself
     //todo: please reanalysze the updating the password with identity itself
     //todo: please reanalysze the updating the password with identity itself
     //todo: please reanalysze the updating the password with identity itself
     //todo: please reanalysze the updating the password with identity itself
-    public Identity updateIdentity(Identity identity) {
+    public Identity updateIdentity(Identity identity, Boolean updatePassword) {
+       // boolean updatePassword = identity.getPassword() != null && !identity.getPassword().isBlank();
+
         Long id = jdbcClient.sql("""
-                SELECT upsert_identity(
-                    ?, ?, ?, ?, ?, ?, ?
-                )
-                """)
-                .param(1, identity.getId())
-                .param(2, identity.getUsername())
-                .param(3, passwordEncoder.encode(identity.getPassword()))
-                .param(4, identity.getDisabled())
-                .param(5, identity.getLocked())
-                .param(6, identity.getDomainCode())
-                .param(7, identity.getPasswordLastChanged())
-                .query(Long.class)
-                .single();
+            SELECT upsert_identity(
+                ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+        """)
+            .param(1, identity.getDomainCode())     // required even in update due to function signature
+            .param(2, identity.getUsername())       // p_username
+            .param(3, updatePassword ? passwordEncoder.encode(identity.getPassword()) : null)  // p_password
+            .param(4, identity.getDomainType())     // p_domain_type
+            .param(5, identity.getIdentityUuid())   // make sure you pass this!
+            .param(6, identity.getId())             // p_id
+            .param(7, identity.getDisabled())       // p_disabled
+            .param(8, identity.getLocked())         // p_locked
+            .param(9, identity.getPasswordLastChanged()) // optional, but useful
+            .query(Long.class)
+            .single();
+
 
         if (!id.equals(identity.getId())) {
             throw new IllegalStateException("Failed to update identity with ID: " + identity.getId());
         }
+
         return identity;
     }
+
 
     public void assignRoleToIdentity(Long identityId, Long roleId) {
         jdbcClient.sql("""

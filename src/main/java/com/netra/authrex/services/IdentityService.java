@@ -82,7 +82,7 @@ public class IdentityService implements UserDetailsService {
 
     @Transactional
     public Identity updateIdentity(Identity identity) {
-        return identityDao.updateIdentity(identity);
+        return identityDao.updateIdentity(identity, false);
     }
 
     @Transactional
@@ -117,7 +117,7 @@ public class IdentityService implements UserDetailsService {
 
         identity.setPassword(newPassword);
         identity.setPasswordLastChanged(LocalDateTime.now());
-        identityDao.updateIdentity(identity);
+        identityDao.updateIdentity(identity, true);
     }
 
     @Transactional(readOnly = true)

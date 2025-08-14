@@ -13,7 +13,14 @@ import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRespon
 
 import java.util.Map;
 
-@Service
+
+//todo: fix injection here
+//todo: fix injection here
+//todo: fix injection here
+//todo: fix injection here
+//todo: fix injection here
+//todo: fix injection here
+//@Service
 public class AwsSecretsManagerService {
 
     private  String SECRET_NAME;  // Replace with your actual secret name
@@ -22,7 +29,7 @@ public class AwsSecretsManagerService {
     private final SecretsManagerClient secretsManagerClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${aws.region}")
+  //  @Value("${aws.region}")
     private String region;
 
     public AwsSecretsManagerService() {

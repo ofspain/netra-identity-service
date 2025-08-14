@@ -1,7 +1,7 @@
 -- Create or update role
 CREATE OR REPLACE FUNCTION upsert_role(
-    p_id BIGINT DEFAULT NULL,
     p_name VARCHAR,
+    p_id BIGINT DEFAULT NULL,
     p_description TEXT DEFAULT NULL
 )
 RETURNS BIGINT

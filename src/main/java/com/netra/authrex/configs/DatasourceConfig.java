@@ -12,17 +12,17 @@ import javax.sql.DataSource;
 @Configuration
 public class DatasourceConfig {
 
-
     @Bean
-    @ConfigurationProperties
+    @ConfigurationProperties("write.datasource")
     public DataSourceProperties writeDataSourceProperties() {
         return new DataSourceProperties();
     }
 
     @Bean(name = "writeDataSource")
-    @ConfigurationProperties
+    @ConfigurationProperties("write.datasource.hikari")
     public DataSource writeDataSource() {
-        log.info("Writing DataSource, Properties: {}", writeDataSourceProperties());
-        return writeDataSourceProperties().initializeDataSourceBuilder().build();
+        return writeDataSourceProperties()
+                .initializeDataSourceBuilder()
+                .build();
     }
 }

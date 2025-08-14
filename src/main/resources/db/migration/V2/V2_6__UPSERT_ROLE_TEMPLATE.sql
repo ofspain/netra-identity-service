@@ -1,6 +1,6 @@
 CREATE OR REPLACE FUNCTION upsert_role_template(
-    p_id BIGINT DEFAULT NULL,
     p_name VARCHAR,
+    p_id BIGINT DEFAULT NULL,
     p_description TEXT DEFAULT NULL,
     p_role_ids BIGINT[] DEFAULT NULL
 )

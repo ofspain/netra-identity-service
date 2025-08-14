@@ -28,6 +28,16 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final IdentityService userDetailsService;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final PasswordEncoder passwordEncoder;
+
+    private static final String[] UTIL_AUTH_WHITE_LIST = {
+            "/v3/api-docs/**",
+            "/swagger-ui/**",
+            "/v2/api-docs/**",
+            "/swagger-resources/**",
+            "/actuator",
+            "/actuator/**"
+    };
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -51,7 +61,7 @@ public class SecurityConfig {
                 // API endpoint configuration
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Auth endpoints
-                        .requestMatchers("/actuator/health").permitAll() // Health check
+                        .requestMatchers(UTIL_AUTH_WHITE_LIST).permitAll() // Health check
                         .anyRequest().authenticated() // Everything else requires auth
                 )
 
@@ -81,12 +91,8 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12); // Adjusted to recommended strength
-    }
 }

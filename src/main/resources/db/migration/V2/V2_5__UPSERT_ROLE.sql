@@ -1,8 +1,9 @@
 CREATE OR REPLACE FUNCTION upsert_role(
-    p_id BIGINT DEFAULT NULL,
     p_name VARCHAR,
+    p_id BIGINT DEFAULT NULL,
     p_description TEXT DEFAULT NULL,
     p_role_template_id BIGINT DEFAULT NULL
+
 )
 RETURNS BIGINT
 LANGUAGE plpgsql

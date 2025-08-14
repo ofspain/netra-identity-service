@@ -34,7 +34,7 @@ public class RoleDao {
 
 
     public Role createRole(Role role) {
-        Long id = jdbcClient.sql("SELECT upsert_role(NULL, ?, ?)")
+        Long id = jdbcClient.sql("SELECT upsert_role(?,NULL, ?)")
                 .param(1, role.getName())
                 .param(2, role.getDescription())
                 .query(Long.class)
@@ -46,8 +46,8 @@ public class RoleDao {
 
     public Role updateRole(Role role) {
         Long id = jdbcClient.sql("SELECT upsert_role(?, ?, ?)")
-                .param(1, role.getId())
-                .param(2, role.getName())
+                .param(1, role.getName())
+                .param(2, role.getId())
                 .param(3, role.getDescription())
                 .query(Long.class)
                 .single();
