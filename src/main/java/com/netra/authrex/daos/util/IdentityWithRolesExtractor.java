@@ -2,8 +2,7 @@ package com.netra.authrex.daos.util;
 
 import com.netra.authrex.dtos.IdentityRoleDto;
 import com.netra.authrex.dtos.IdentityWithRolesDto;
-import com.netra.authrex.exceptions.AppDataAccessException;
-import org.springframework.dao.DataAccessException;
+import com.netra.commons.exceptions.AppDataAccessException;
 import org.springframework.jdbc.core.ResultSetExtractor;
 
 import java.sql.ResultSet;
