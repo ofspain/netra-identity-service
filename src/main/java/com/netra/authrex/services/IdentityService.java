@@ -122,6 +122,6 @@ public class IdentityService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public Optional<Identity> findIdentityById(Long id) {
-        throw new UnsupportedOperationException("findIdentityById not implemented yet");
+        return identityDao.findById(id);
     }
 }

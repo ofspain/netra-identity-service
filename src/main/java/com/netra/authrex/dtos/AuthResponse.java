@@ -16,7 +16,11 @@ public record AuthResponse(
 
         @JsonInclude(JsonInclude.Include.NON_NULL)
         @JsonProperty("refresh_token") String refreshToken
+
 ) {
+    public AuthResponse(String accessToken, long expiresIn, String refreshToken) {
+        this(accessToken, "Bearer", expiresIn, LocalDateTime.now(), refreshToken);
+    }
     public AuthResponse(String accessToken, long expiresIn) {
         this(accessToken, "Bearer", expiresIn, LocalDateTime.now(), null);
     }

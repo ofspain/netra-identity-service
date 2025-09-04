@@ -1,4 +1,4 @@
-package com.netra.authrex.configs;
+package com.netra.authrex.configs.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

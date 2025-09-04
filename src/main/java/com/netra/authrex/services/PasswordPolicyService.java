@@ -31,7 +31,7 @@ public class PasswordPolicyService {
             return false;
         }
 
-        // Check password rotation interval
+        // todo: Check password rotation interval, this will be necessary only when account is to be locked if password not rotated
         validatePasswordRotationInterval(identity);
 
         return true;
