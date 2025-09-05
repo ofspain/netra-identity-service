@@ -1,17 +1,16 @@
 package com.netra.authrex.controllers;
 
-import com.netra.authrex.dtos.IdentityRoleDto;
-import com.netra.authrex.dtos.IdentitySearchParam;
-import com.netra.authrex.dtos.IdentityWithRolesDto;
+import com.netra.authrex.dtos.*;
 import com.netra.authrex.services.IdentityService;
+import com.netra.commons.enums.DomainType;
 import com.netra.commons.models.Identity;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.Optional;
-import com.netra.authrex.dtos.ChangePasswordRequest;
 
 @RestController
 @RequestMapping("/api/identities")
@@ -19,94 +18,102 @@ import com.netra.authrex.dtos.ChangePasswordRequest;
 public class IdentityController {
     private final IdentityService identityService;
 
-    @PostMapping
-    public ResponseEntity<Identity> createIdentity(@Valid @RequestBody Identity identity) {
+    @PostMapping("/registration")
+    public ApiResponse<Identity> registerIdentity(@Valid @RequestBody Identity identity) {
+        identity.setDomainCode(Identity.CUSTOMERUSER_DOMAINCODE);
+        identity.setDomainType(DomainType.CUSTOMER);
         Identity createdIdentity = identityService.createIdentity(identity);
-        return ResponseEntity.ok(createdIdentity);
+        return ApiResponse.success(createdIdentity, "User registered successfully",
+                "/api/identities/registration", "trace-id-placeholder");
+    }
+
+    @PostMapping("/create")
+    @PreAuthorize("hasAuthority('CREATE_DOMAIN')")
+    public ApiResponse<Identity> createIdentity(@Valid @RequestBody Identity identity) {
+        Identity createdIdentity = identityService.createIdentity(identity);
+        return ApiResponse.success(createdIdentity, "User created successfully",
+                "/api/identities/create", "trace-id-placeholder");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Identity> updateIdentity(
+    public ApiResponse<Identity> updateIdentity(
             @PathVariable Long id,
             @Valid @RequestBody Identity identity) {
-        identity.setId(id); // Ensure the ID from path is used
+        identity.setId(id);
         Identity updatedIdentity = identityService.updateIdentity(identity);
-        return ResponseEntity.ok(updatedIdentity);
+        return ApiResponse.success(updatedIdentity, "User updated successfully",
+                "/api/identities/" + id, "trace-id-placeholder");
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Identity> getIdentityById(@PathVariable Long id) {
+    public ApiResponse<Identity> getIdentityById(@PathVariable Long id) {
         Optional<Identity> identity = identityService.findIdentityById(id);
-        return identity.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return identity
+                .map(i -> ApiResponse.success(i, "User found", "/api/identities/" + id, "trace-id-placeholder"))
+                .orElseGet(() -> ApiResponse.error("404", "User not found", null, "/api/identities/" + id, "trace-id-placeholder"));
     }
 
     @GetMapping("/username/{username}")
-    public ResponseEntity<Identity> getIdentityByUsername(@PathVariable String username) {
+    public ApiResponse<Identity> getIdentityByUsername(@PathVariable String username) {
         Optional<Identity> identity = identityService.findIdentityByUsername(username);
-        return identity.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        return identity
+                .map(i -> ApiResponse.success(i, "User found", "/api/identities/username/" + username, "trace-id-placeholder"))
+                .orElseGet(() -> ApiResponse.error("404", "User not found", null, "/api/identities/username/" + username, "trace-id-placeholder"));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<IdentityWithRolesDto>> searchIdentities(
+    public ApiResponse<Page<IdentityWithRolesDto>> searchIdentities(
             @ModelAttribute IdentitySearchParam searchParam) {
-        // Set default values if not provided
-        if (searchParam.getPageNum() == null) {
-            searchParam.setPageNum(0);
-        }
-        if (searchParam.getPageSize() == null) {
-            searchParam.setPageSize(20);
-        }
-
-        // Validate page size
-        if (searchParam.getPageSize() > 100) {
-            searchParam.setPageSize(100);
-        }
+        if (searchParam.getPageNum() == null) searchParam.setPageNum(0);
+        if (searchParam.getPageSize() == null) searchParam.setPageSize(20);
+        if (searchParam.getPageSize() > 100) searchParam.setPageSize(100);
 
         Page<IdentityWithRolesDto> result = identityService.findIdentities(searchParam);
-        return ResponseEntity.ok(result);
+        return ApiResponse.success(result, "Search completed", "/api/identities/search", "trace-id-placeholder");
     }
 
     @PostMapping("/{identityId}/roles")
-    public ResponseEntity<Void> assignRoleToIdentity(
+    public ApiResponse<Void> assignRoleToIdentity(
             @PathVariable Long identityId,
             @RequestBody IdentityRoleDto roleDto) {
         identityService.assignRoleToIdentity(identityId, roleDto.getRoleId());
-        return ResponseEntity.ok().build();
+        return ApiResponse.success(null, "Role assigned successfully",
+                "/api/identities/" + identityId + "/roles", "trace-id-placeholder");
     }
 
     @DeleteMapping("/{identityId}/roles/{roleId}")
-    public ResponseEntity<Void> removeRoleFromIdentity(
+    public ApiResponse<Void> removeRoleFromIdentity(
             @PathVariable Long identityId,
             @PathVariable Long roleId) {
         identityService.removeRoleFromIdentity(identityId, roleId);
-        return ResponseEntity.ok().build();
+        return ApiResponse.success(null, "Role removed successfully",
+                "/api/identities/" + identityId + "/roles/" + roleId, "trace-id-placeholder");
     }
 
     @PostMapping("/{identityId}/role-templates")
-    public ResponseEntity<Void> assignRoleTemplateToIdentity(
+    public ApiResponse<Void> assignRoleTemplateToIdentity(
             @PathVariable Long identityId,
             @RequestBody IdentityRoleDto roleDto) {
         identityService.assignRoleTemplateToIdentity(identityId, roleDto.getRoleId());
-        return ResponseEntity.ok().build();
+        return ApiResponse.success(null, "Role template assigned successfully",
+                "/api/identities/" + identityId + "/role-templates", "trace-id-placeholder");
     }
 
     @DeleteMapping("/{identityId}/role-templates/{templateId}")
-    public ResponseEntity<Void> removeRoleTemplateFromIdentity(
+    public ApiResponse<Void> removeRoleTemplateFromIdentity(
             @PathVariable Long identityId,
             @PathVariable Long templateId) {
         identityService.removeRoleTemplateFromIdentity(identityId, templateId);
-        return ResponseEntity.ok().build();
+        return ApiResponse.success(null, "Role template removed successfully",
+                "/api/identities/" + identityId + "/role-templates/" + templateId, "trace-id-placeholder");
     }
 
     @PostMapping("/{id}/change-password")
-    public ResponseEntity<Void> changePassword(
+    public ApiResponse<Void> changePassword(
             @PathVariable Long id,
             @RequestBody ChangePasswordRequest request) {
         identityService.changePassword(id, request.getNewPassword());
-        return ResponseEntity.ok().build();
+        return ApiResponse.success(null, "Password changed successfully",
+                "/api/identities/" + id + "/change-password", "trace-id-placeholder");
     }
-
-
 }

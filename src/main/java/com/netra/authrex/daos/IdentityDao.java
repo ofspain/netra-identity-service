@@ -31,7 +31,7 @@ public class IdentityDao {
 
         return jdbcClient.sql("SELECT * FROM get_identity_with_roles(?)")
                 .param(1, username)
-                .query(new EnhancedBeanPropertyRowMapper<Identity>())
+                .query(EnhancedBeanPropertyRowMapper.newInstance(Identity.class))
                 .optional();
     }
 
@@ -100,6 +100,7 @@ public class IdentityDao {
     }
 
     public Identity saveIdentity(Identity identity) {
+        String uuid = TraceableUuidGenerator.generateTraceableUuid(identity.getDomainCode());
         Long id = jdbcClient.sql("""
             SELECT upsert_identity(
                 ?, ?, ?, ?, ?, NULL, ?, ?, ?
@@ -108,8 +109,8 @@ public class IdentityDao {
                 .param(1, identity.getDomainCode())
                 .param(2, identity.getUsername())
                 .param(3, passwordEncoder.encode(identity.getPassword()))
-                .param(4, identity.getDomainType())
-                .param(5, TraceableUuidGenerator.generateTraceableUuid(identity.getDomainCode()))
+                .param(4, identity.getDomainType().name())
+                .param(5, uuid)
                 .param(6, identity.getDisabled())
                 .param(7, identity.getLocked())
                 .param(8, identity.getPasswordLastChanged())
@@ -117,6 +118,7 @@ public class IdentityDao {
                 .single();
 
         identity.setId(id);
+        identity.setIdentityUuid(uuid);
         return identity;
     }
 

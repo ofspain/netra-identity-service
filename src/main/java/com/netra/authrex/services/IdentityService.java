@@ -1,6 +1,7 @@
 package com.netra.authrex.services;
 
 import com.netra.authrex.daos.IdentityDao;
+import com.netra.authrex.dtos.AuthUser;
 import com.netra.authrex.dtos.IdentityRoleDto;
 import com.netra.authrex.dtos.IdentitySearchParam;
 import com.netra.authrex.dtos.IdentityWithRolesDto;
@@ -43,16 +44,9 @@ public class IdentityService implements UserDetailsService {
             throw new CredentialsExpiredException("Password has expired");
         }
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                user.isEnabled(),          // enabled
-                true,                    // accountNonExpired
-                true,                    // credentialsNonExpired
-                !user.getLocked(),         // accountNonLocked
-                getAuthorities(user.getRoles())
-        );
+        return new AuthUser(user);
     }
+
 
     private Collection<? extends GrantedAuthority> getAuthorities(Set<Role> roles) {
         return roles.stream()

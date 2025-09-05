@@ -62,6 +62,7 @@ public class SecurityConfig {
                 // API endpoint configuration
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll() // Auth endpoints
+                        .requestMatchers("/api/identities/registration").permitAll() // Self registration
                         .requestMatchers(UTIL_AUTH_WHITE_LIST).permitAll() // Health check
                         .anyRequest().authenticated() // Everything else requires auth
                 )

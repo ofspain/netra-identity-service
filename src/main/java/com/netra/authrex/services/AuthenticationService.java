@@ -5,6 +5,7 @@ import com.netra.authrex.configs.JwtConfig;
 import com.netra.authrex.daos.IdentityDao;
 import com.netra.authrex.dtos.AuthRequest;
 import com.netra.authrex.dtos.AuthResponse;
+import com.netra.authrex.dtos.AuthUser;
 import com.netra.authrex.exceptions.AuthenticationException;
 import com.netra.authrex.exceptions.TokenRefreshException;
 import com.netra.commons.models.Identity;
@@ -54,20 +55,23 @@ public class AuthenticationService {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Load user details
-            UserDetails userDetails = identityService.loadUserByUsername(request.username());
+            // Load user details from authentication
+           // UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            AuthUser authUser = (AuthUser) authentication.getPrincipal();
+            Identity identity = authUser.getIdentity();
 
             // Generate JWT token
-            String token = jwtTokenUtil.generateToken(userDetails);
+            String token = jwtTokenUtil.generateToken(authUser);
 
             // Get token expiration details
             Date expiration = jwtTokenUtil.extractExpiration(token);
             long expiresIn = (expiration.getTime() - System.currentTimeMillis()) / 1000;
 
-
-            // Update last login timestamp
-            Identity identity = identityDao.findByUsername(request.username())
-                    .orElseThrow(() -> new AuthenticationException("User not found"));
+//
+//            // Update last login timestamp
+//            Identity identity = identityDao.findByUsername(request.username())
+//                    .orElseThrow(() -> new AuthenticationException("User not found"));
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(identity.getId());
 
 
@@ -81,7 +85,7 @@ public class AuthenticationService {
                     refreshToken.getToken()    // refresh_token (optional)
             );
 
-        } catch (BadCredentialsException e) {
+        } catch (Exception e) {
             throw new AuthenticationException("Invalid username or password");
         }
     }

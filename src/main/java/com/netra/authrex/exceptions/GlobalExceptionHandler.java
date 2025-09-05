@@ -133,6 +133,17 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuthenticationException(AuthenticationException ex, HttpServletRequest request) {
+        return buildErrorResponse(
+                ex.getAppErrorCode(),
+               ex.getMessage(),
+                null,
+                HttpStatus.UNAUTHORIZED,
+                request
+        );
+    }
+
     private ResponseEntity<ApiResponse<Object>> buildErrorResponse(String code, String message, List<Error> errors, HttpStatus status, HttpServletRequest request) {
         ApiResponse<Object> response = ApiResponse.error(code, message, errors, request.getRequestURI(), TraceIdFilter.getTraceId());
         return new ResponseEntity<>(response, status);

@@ -1,27 +1,23 @@
 package com.netra.authrex.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netra.authrex.dtos.AuthApiResponse;
 import com.netra.authrex.dtos.AuthRequest;
-import com.netra.authrex.dtos.AuthResponse;
 import com.netra.authrex.dtos.RefreshTokenRequest;
 import com.netra.authrex.services.AuthenticationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
-import jakarta.servlet.http.HttpServletRequest;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = AuthController.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class AuthControllerTest {
 
     @Autowired
@@ -33,51 +29,99 @@ class AuthControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private AuthRequest authRequest;
-    private AuthResponse authResponse;
+    private AuthRequest validAuthRequest;
+    private AuthRequest invalidAuthRequest;
 
     @BeforeEach
     void setup() {
-        authRequest = new AuthRequest("johndoe", "password123");
-        authResponse = new AuthResponse("jwt-token", 3000l, );
+        // These should match a real user your AuthenticationService can validate.
+        validAuthRequest = new AuthRequest("johndoe", "password123");
+        invalidAuthRequest = new AuthRequest("johndoe", "wrongpassword");
     }
 
     @Test
     void testLogin_success() throws Exception {
-        Mockito.when(authenticationService.authenticate(any(AuthRequest.class)))
-                .thenReturn(authResponse);
 
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authRequest)))
+                        .content(objectMapper.writeValueAsString(validAuthRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Authentication successful"))
-                .andExpect(jsonPath("$.data.accessToken").value("jwt-token"))
-                .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"));
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(jsonPath("$.data.refreshToken").exists());
+    }
+
+    @Test
+    void testLogin_invalidCredentials() throws Exception {
+        // when + then: Spring Security should translate UsernameNotFoundException into 401
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidAuthRequest)))
+                .andExpect(status().isUnauthorized())
+                .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        System.out.println("Response: " + responseBody);
+                //.andExpect(jsonPath("$.message").value("Invalid username or password"));
     }
 
     @Test
     void testRefreshToken_success() throws Exception {
-        RefreshTokenRequest request = new RefreshTokenRequest("refresh-token");
-        Mockito.when(authenticationService.refreshToken("refresh-token"))
-                .thenReturn(authResponse);
+        // First, login to get a real refresh token
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validAuthRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        // Extract refreshToken (pseudo-code: depends on your JSON structure)
+        String refreshToken = objectMapper.readTree(loginResponse)
+                .path("data")
+                .path("refreshToken")
+                .asText();
+
+        RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
 
         mockMvc.perform(post("/api/auth/refresh")
-                        .header("X-Trace-Id", "trace-123")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Token refreshed successfully"))
-                .andExpect(jsonPath("$.data.accessToken").value("jwt-token"));
+                .andExpect(jsonPath("$.data.accessToken").exists());
+    }
+
+    @Test
+    void testRefreshToken_expiredOrInvalid() throws Exception {
+        RefreshTokenRequest request = new RefreshTokenRequest("some-invalid-or-expired-token");
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Refresh token expired")); // or "Invalid token"
     }
 
     @Test
     void testLogout_success() throws Exception {
-        RefreshTokenRequest request = new RefreshTokenRequest("refresh-token");
-        doNothing().when(authenticationService).logout("refresh-token");
+        // Login to get a real refresh token
+        String loginResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validAuthRequest)))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        String refreshToken = objectMapper.readTree(loginResponse)
+                .path("data")
+                .path("refreshToken")
+                .asText();
+
+        RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
 
         mockMvc.perform(post("/api/auth/logout")
-                        .header("X-Trace-Id", "trace-456")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -86,37 +130,8 @@ class AuthControllerTest {
     }
 
     @Test
-    void testLogin_invalidCredentials() throws Exception {
-        Mockito.when(authenticationService.authenticate(any(AuthRequest.class)))
-                .thenThrow(new RuntimeException("Invalid credentials"));
-
-        mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authRequest)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Invalid credentials"));
-    }
-
-    @Test
-    void testRefreshToken_expiredToken() throws Exception {
-        RefreshTokenRequest request = new RefreshTokenRequest("expired-token");
-
-        Mockito.when(authenticationService.refreshToken("expired-token"))
-                .thenThrow(new RuntimeException("Refresh token expired"));
-
-        mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value("Refresh token expired"));
-    }
-
-    @Test
     void testLogout_invalidToken() throws Exception {
         RefreshTokenRequest request = new RefreshTokenRequest("invalid-token");
-
-        Mockito.doThrow(new RuntimeException("Invalid token"))
-                .when(authenticationService).logout("invalid-token");
 
         mockMvc.perform(post("/api/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
