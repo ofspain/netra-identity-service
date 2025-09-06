@@ -76,7 +76,7 @@ public class AuthController {
     }
 
     @GetMapping(value = "/public-key", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String getPublicKey() throws Exception {
+    public String getPublicKey(HttpServletRequest request) throws Exception {
         return authenticationService.retrievePublicKey();
     }
 }
