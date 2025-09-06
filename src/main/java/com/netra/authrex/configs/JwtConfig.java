@@ -99,6 +99,49 @@ public class JwtConfig {
         return claimsResolver.apply(claims);
     }
 
+    // Extract the issuer from the token
+    public String extractIssuer(String token) {
+        return extractClaim(token, Claims::getIssuer);
+    }
+
+    // Extract domain code
+    public String extractDomainCode(String token) {
+        return extractClaim(token, claims -> claims.get("domain_code", String.class));
+    }
+
+    // Extract domain type
+    public String extractDomainType(String token) {
+        return extractClaim(token, claims -> claims.get("domain_type", String.class));
+    }
+
+
+    // Extract identity UUID
+    public String extractIdentityUUID(String token) {
+        return extractClaim(token, claims -> claims.get("identity_uuid", String.class));
+    }
+
+    // Extract last login as LocalDateTime
+    public LocalDateTime extractLastLogin(String token) {
+        return extractClaim(token, claims -> {
+            String value = claims.get("last_login", String.class);
+            return (value != null) ? LocalDateTime.parse(value) : null;
+        });
+    }
+
+    // Extract last password change as LocalDateTime
+    public LocalDateTime extractLastPasswordChange(String token) {
+        return extractClaim(token, claims -> {
+            String value = claims.get("last_password_change", String.class);
+            return (value != null) ? LocalDateTime.parse(value) : null;
+        });
+    }
+
+    // Extract roles
+    public List<String> extractRoles(String token) {
+        return extractClaim(token, claims -> claims.get("roles", List.class));
+    }
+
+
     public String generateToken(AuthUser authUser){
         return generateToken(new HashMap<>(), authUser);
     }
@@ -135,7 +178,7 @@ public class JwtConfig {
         // Ensure map exists
         extraClaims = (extraClaims == null ? new HashMap<>() : extraClaims);
 
-        // ✅ Put application-specific details into the claims
+
         extraClaims.put("domain_code", domainCode);
         extraClaims.put("domain_type", domainType);
         extraClaims.put("identity_uuid", identityUUID);
@@ -166,7 +209,25 @@ public class JwtConfig {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        final String issued = extractIssuer(token);
+        boolean validUserName = username.equals(userDetails.getUsername());
+        boolean validIssuer = issued.equalsIgnoreCase(issuer);
+        return (validIssuer && validUserName) && !isTokenExpired(token);
+    }
+
+
+    public boolean validatePlatformDomainConformity(String token, Identity identity, String requestedDomainType){
+        final String bakedDomainType = extractDomainType(token);
+
+        boolean validDomainType1 = bakedDomainType.equalsIgnoreCase(requestedDomainType);
+        boolean validDomainType2 = bakedDomainType.equalsIgnoreCase(identity.getDomainType().name());
+        boolean validDomainType = validDomainType1 && validDomainType2;
+
+        final String bakedDomainCode = extractDomainCode(token);
+        boolean validDomainCode = bakedDomainCode.equalsIgnoreCase(identity.getDomainCode());
+
+        return validDomainCode && validDomainType;
+
     }
 
     private boolean isTokenExpired(String token) {

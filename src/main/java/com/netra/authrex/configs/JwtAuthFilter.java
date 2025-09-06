@@ -1,6 +1,7 @@
 package com.netra.authrex.configs;
 
 import com.netra.authrex.configs.JwtConfig;
+import com.netra.authrex.dtos.AuthUser;
 import com.netra.authrex.services.IdentityService;
 import com.netra.commons.models.Identity;
 import com.netra.commons.util.BasicUtil;
@@ -11,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -44,11 +46,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         final String username;
         String authXFactor = request.getHeader(Constants.REQUEST_AUTH_DOMAIN_X_KEY);
 
-        // Skip filter if no Authorization header or doesn't start with "Bearer "
 
+        //ensure user default to the least possible privilege domain
         if(!BasicUtil.validString(authXFactor)){
             authXFactor = Identity.CUSTOMERUSER_DOMAINCODE;
         }
+
+        // Skip filter if no Authorization header or doesn't start with "Bearer "
 
         if (!BasicUtil.validString(authHeader) || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -67,11 +71,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 // Load user details from database
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-                userDetailsService.checkDomainCompatibility((Identity) userDetails, authXFactor);
+                AuthUser authUser = (AuthUser) userDetails;
+
+                Boolean validToken = jwtConfig.isTokenValid(jwt, userDetails);
+                Boolean verifiedDomainCompatibility = jwtConfig.validatePlatformDomainConformity(jwt, authUser.getIdentity(), authXFactor);
 
 
                 // Validate token
-                if (jwtConfig.isTokenValid(jwt, userDetails)) {
+                if (validToken && verifiedDomainCompatibility) {
                     // Create authentication token
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
@@ -87,6 +94,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     // Set authentication in SecurityContext
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
+            }else{
+                //todo: thrown a platform specific exception here
+                throw new BadCredentialsException("JWT token domain mismatch or invalid identity");
+
             }
         } catch (Exception e) {
             // Log the error if needed
