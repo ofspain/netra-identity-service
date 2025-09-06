@@ -111,7 +111,7 @@ public class AuthenticationService {
         UserDetails userDetails = identityService.loadUserByUsername(identity.getUsername());
 
         // Generate new access token
-        String newAccessToken = jwtTokenUtil.generateToken(userDetails);
+        String newAccessToken = jwtTokenUtil.generateToken((AuthUser) userDetails);
         Date expiration = jwtTokenUtil.extractExpiration(newAccessToken);
         long expiresIn = (expiration.getTime() - System.currentTimeMillis()) / 1000;
 

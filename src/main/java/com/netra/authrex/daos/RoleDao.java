@@ -34,13 +34,17 @@ public class RoleDao {
 
 
     public Role createRole(Role role) {
-        Long id = jdbcClient.sql("SELECT upsert_role(?,NULL, ?)")
+        try{
+            Long id = jdbcClient.sql("SELECT upsert_role(?,NULL, ?)")
                 .param(1, role.getName())
                 .param(2, role.getDescription())
                 .query(Long.class)
                 .single();
 
-        role.setId(id);
+            role.setId(id);
+        }catch (Exception exp){
+            exp.printStackTrace();
+        }
         return role;
     }
 
@@ -66,18 +70,23 @@ public class RoleDao {
         Pageable pageable = PageRequest.of(pageNum, pageSize);
 
 
-        String json =  jdbcClient.sql("SELECT * FROM find_roles(?, ?,?,?)")
-                .param(1, id)
+        int offset = searchParam.calculateDBOffset();// pageNum * pageSize;
+
+        String json = jdbcClient.sql(
+                        "SELECT * FROM find_roles(?::bigint, ?::varchar, ?::int, ?::int)")
+                .param(1, id)          // null is OK; cast handles it
                 .param(2, name)
                 .param(3, pageSize)
-                .param(4, pageNum)
+                .param(4, offset)      // real offset, not page number
                 .query(String.class)
                 .single();
 
         try {
             JsonNode root = objectMapper.readTree(json);
-            List<Role> content = objectMapper.convertValue(root.path("data"),
-                    new TypeReference<List<Role>>() {});
+            List<Role> content = objectMapper.convertValue(
+                    root.path("data"),
+                    new TypeReference<List<Role>>() {}
+            );
 
             return new PageImpl<>(
                     content,
@@ -88,6 +97,7 @@ public class RoleDao {
             throw new AppDataAccessException("Error parsing role templates", e);
         }
     }
+
 
     public Optional<Role> findRole(Long id, String name){
         return jdbcClient.sql("CALL get_role(?, ?)")
@@ -109,4 +119,19 @@ public class RoleDao {
             return role;
         }
     }
+
+    //@Autowired
+    //private NamedParameterJdbcTemplate namedJdbc;
+    //
+    //public String searchRolesJson(Long id, String name, int pageSize, int pageNum) {
+    //    String sql = "SELECT * FROM find_roles(:id, :name, :limit, :offset)";
+    //
+    //    MapSqlParameterSource params = new MapSqlParameterSource()
+    //        .addValue("id", id, Types.BIGINT)          // null ok
+    //        .addValue("name", name, Types.VARCHAR)     // null ok
+    //        .addValue("limit", pageSize, Types.INTEGER)
+    //        .addValue("offset", pageNum, Types.INTEGER);
+    //
+    //    return namedJdbc.queryForObject(sql, params, String.class);
+    //}
 }

@@ -64,12 +64,16 @@ public class IdentityController {
     @GetMapping("/search")
     public ApiResponse<Page<IdentityWithRolesDto>> searchIdentities(
             @ModelAttribute IdentitySearchParam searchParam) {
-        if (searchParam.getPageNum() == null) searchParam.setPageNum(0);
-        if (searchParam.getPageSize() == null) searchParam.setPageSize(20);
-        if (searchParam.getPageSize() > 100) searchParam.setPageSize(100);
 
+        // No manual pageNum/pageSize checks needed
         Page<IdentityWithRolesDto> result = identityService.findIdentities(searchParam);
-        return ApiResponse.success(result, "Search completed", "/api/identities/search", "trace-id-placeholder");
+
+        return ApiResponse.success(
+                result,
+                "Search completed",
+                "/api/identities/search",
+                "trace-id-placeholder"
+        );
     }
 
     @PostMapping("/{identityId}/roles")

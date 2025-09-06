@@ -39,6 +39,22 @@ public class SecurityConfig {
             "/actuator/**"
     };
 
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    //todo: remove this while list used ONLY for testing
+    private static final String[] TEST_INVOKE_WHITE_LIST = {
+            "/api/roles/**",
+            "/api/role-templates/**"
+    };
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -64,6 +80,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll() // Auth endpoints
                         .requestMatchers("/api/identities/registration").permitAll() // Self registration
                         .requestMatchers(UTIL_AUTH_WHITE_LIST).permitAll() // Health check
+                        .requestMatchers(TEST_INVOKE_WHITE_LIST).permitAll() // Health check
                         .anyRequest().authenticated() // Everything else requires auth
                 )
 

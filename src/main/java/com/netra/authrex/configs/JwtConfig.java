@@ -1,10 +1,12 @@
 package com.netra.authrex.configs;
 
+import com.netra.authrex.dtos.AuthUser;
+import com.netra.commons.models.Identity;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,8 +19,10 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -95,12 +99,12 @@ public class JwtConfig {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails){
-        return generateToken(new HashMap<>(), userDetails);
+    public String generateToken(AuthUser authUser){
+        return generateToken(new HashMap<>(), authUser);
     }
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        return buildToken(extraClaims, userDetails, jwtExpiration);
+    public String generateToken(Map<String, Object> extraClaims, AuthUser authUser) {
+        return buildToken(extraClaims, authUser, jwtExpiration);
     }
 
 //    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
@@ -114,16 +118,51 @@ public class JwtConfig {
 //                .compact();
 //    }
 
-    private String buildToken(Map<String, Object> extraClaims, UserDetails userDetails, long expiration) {
-        return Jwts.builder()
-                .setClaims(extraClaims)
-                .setSubject(userDetails.getUsername())
+    private String buildToken(Map<String, Object> extraClaims, AuthUser authUser, long expiration) {
+        JwtBuilder builder = Jwts.builder()
+                .setSubject(authUser.getUsername())
                 .setIssuer(issuer)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000))
+                .setExpiration(new Date(System.currentTimeMillis() + expiration * 1000));
+
+        Identity identity = authUser.getIdentity();
+        String domainCode = identity.getDomainCode();
+        String domainType = identity.getDomainType().name();
+        String identityUUID = identity.getIdentityUuid();
+        LocalDateTime lastLogin = identity.getLastLogin();
+        LocalDateTime lastPasswordChange = identity.getPasswordLastChanged();
+
+        // Ensure map exists
+        extraClaims = (extraClaims == null ? new HashMap<>() : extraClaims);
+
+        // ✅ Put application-specific details into the claims
+        extraClaims.put("domain_code", domainCode);
+        extraClaims.put("domain_type", domainType);
+        extraClaims.put("identity_uuid", identityUUID);
+        if (lastLogin != null) {
+            extraClaims.put("last_login", lastLogin.toString());
+        }
+        if (lastPasswordChange != null) {
+            extraClaims.put("last_password_change", lastPasswordChange.toString());
+        }
+
+        // Merge extra claims into builder
+        for (Map.Entry<String, Object> entry : extraClaims.entrySet()) {
+            builder.claim(entry.getKey(), entry.getValue());
+        }
+
+        // Always add roles from UserDetails
+        List<String> roles = authUser.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+        builder.claim("roles", roles);
+
+        return builder
                 .signWith(getPrivateKey(), SignatureAlgorithm.RS256)
                 .compact();
     }
+
+
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);

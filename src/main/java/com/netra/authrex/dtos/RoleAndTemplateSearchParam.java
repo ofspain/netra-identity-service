@@ -4,7 +4,7 @@ import com.netra.commons.requests.PagingSearchParams;
 import lombok.Data;
 
 @Data
-public class RoleAndTemplateSearchParam extends PagingSearchParams {
+public class RoleAndTemplateSearchParam extends PagingSearchParams<RoleAndTemplateSearchParam> {
     private Long id;
     private String name;
 }

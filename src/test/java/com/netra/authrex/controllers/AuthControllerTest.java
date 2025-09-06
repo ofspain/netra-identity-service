@@ -42,13 +42,18 @@ class AuthControllerTest {
     @Test
     void testLogin_success() throws Exception {
 
-        mockMvc.perform(post("/api/auth/login")
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validAuthRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Authentication successful"))
-                .andExpect(jsonPath("$.data.accessToken").exists())
-                .andExpect(jsonPath("$.data.refreshToken").exists());
+                .andExpect(jsonPath("$.data.access_token").exists())
+                .andExpect(jsonPath("$.data.refresh_token").exists())
+                .andReturn();
+
+
+        String responseBody = result.getResponse().getContentAsString();
+        System.out.println("Response JSON: " + responseBody);
     }
 
     @Test
