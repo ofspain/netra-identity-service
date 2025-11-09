@@ -4,6 +4,7 @@ import com.netra.authrex.dtos.*;
 import com.netra.authrex.services.IdentityService;
 import com.netra.commons.enums.DomainType;
 import com.netra.commons.models.Identity;
+import com.netra.commons.requests.CreateIdentityRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -19,17 +20,22 @@ public class IdentityController {
     private final IdentityService identityService;
 
     @PostMapping("/registration")
-    public ApiResponse<Identity> registerIdentity(@Valid @RequestBody Identity identity) {
+    public ApiResponse<Identity> registerIdentity(@RequestBody CreateIdentityRequest identityRequest) {
+        Identity identity = identityRequest.toIdentity();
         identity.setDomainCode(Identity.CUSTOMERUSER_DOMAINCODE);
         identity.setDomainType(DomainType.CUSTOMER);
+        System.out.println("PASSWORD "+identity.getPassword());
         Identity createdIdentity = identityService.createIdentity(identity);
+
+        System.out.println("Created User "+identity);
         return ApiResponse.success(createdIdentity, "User registered successfully",
                 "/api/identities/registration", "trace-id-placeholder");
     }
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('CREATE_DOMAIN')")
-    public ApiResponse<Identity> createIdentity(@Valid @RequestBody Identity identity) {
+    public ApiResponse<Identity> createIdentity(@RequestBody CreateIdentityRequest identityRequest) {
+        Identity identity = identityRequest.toIdentity();
         Identity createdIdentity = identityService.createIdentity(identity);
         return ApiResponse.success(createdIdentity, "User created successfully",
                 "/api/identities/create", "trace-id-placeholder");

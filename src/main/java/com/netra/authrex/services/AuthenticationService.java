@@ -13,9 +13,7 @@ import com.netra.commons.models.RefreshToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -85,8 +83,14 @@ public class AuthenticationService {
                     refreshToken.getToken()    // refresh_token (optional)
             );
 
-        } catch (Exception e) {
+        } catch (LockedException e) {
+            throw new AuthenticationException("Account is locked");
+        } catch (DisabledException e) {
+            throw new AuthenticationException("Account is disabled");
+        } catch (BadCredentialsException e) {
             throw new AuthenticationException("Invalid username or password");
+        } catch (Exception e) {
+            throw new AuthenticationException("Authentication failed");
         }
     }
 
