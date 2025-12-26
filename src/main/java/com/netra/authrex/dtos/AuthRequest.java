@@ -1,21 +1,24 @@
 package com.netra.authrex.dtos;
 
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
+public abstract class AuthRequest {
 
-public record AuthRequest(
-        @NotBlank(message = "Username cannot be blank")
-        @Size(min = 4, max = 50, message = "Username must be 4-50 characters")
-        String username,
+    public abstract AUTHGRANTTYPE getGrantType();
 
-        @NotBlank(message = "Password cannot be blank")
-        @Size(min = 8, max = 100, message = "Password must be 8-100 characters")
-        String password
-) {
-    // Compact constructor for additional validation
-    public AuthRequest {
-        username = username.trim();
+    public enum AUTHGRANTTYPE {
+        PASSWORD("password"),
+        CLIENT_CREDENTIALS("client_credentials"),
+        TOKEN_EXCHANGE("urn:ietf:params:oauth:grant-type:token-exchange");
+
+        private final String value;
+
+        AUTHGRANTTYPE(String value) {
+            this.value = value;
+        }
+
+        public String value() {
+            return value;
+        }
     }
 }
+

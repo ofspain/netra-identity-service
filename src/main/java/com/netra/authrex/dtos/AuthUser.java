@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 public class AuthUser implements UserDetails {
 
     private final Identity identity;
+    private AuthRequest.AUTHGRANTTYPE authgranttype;
 
     public AuthUser(Identity identity) {
         this.identity = Objects.requireNonNull(identity, "Identity must not be null");
@@ -67,5 +68,9 @@ public class AuthUser implements UserDetails {
 
     public Identity getIdentity() {
         return identity;
+    }
+
+    public AuthRequest.AUTHGRANTTYPE getAuthgranttype() {
+        return authgranttype;
     }
 }

@@ -27,14 +27,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class IdentityService implements UserDetailsService {
+public class IdentityService{// implements UserDetailsService {
 
     private final IdentityDao identityDao;
 
     @Value("${max.days.allowed.password.lifetime}")
     private String passwordExpiryDays;
 
-    @Override
+//    @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Identity user = identityDao.loadIdentityByUsername(username)
@@ -117,5 +117,10 @@ public class IdentityService implements UserDetailsService {
     @Transactional(readOnly = true)
     public Optional<Identity> findIdentityById(Long id) {
         return identityDao.findById(id);
+    }
+
+    @Transactional
+    public void updateLastLogin(Long identityId){
+        identityDao.updateLastLogin(identityId);
     }
 }

@@ -2,6 +2,7 @@ package com.netra.authrex.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netra.authrex.dtos.AuthRequest;
+import com.netra.authrex.dtos.PasswordAuthRequest;
 import com.netra.authrex.dtos.RefreshTokenRequest;
 import com.netra.authrex.services.AuthenticationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,8 +36,8 @@ class AuthControllerTest {
     @BeforeEach
     void setup() {
         // These should match a real user your AuthenticationService can validate.
-        validAuthRequest = new AuthRequest("johndoe", "password123");
-        invalidAuthRequest = new AuthRequest("johndoe", "wrongpassword");
+        validAuthRequest = new PasswordAuthRequest("johndoe", "password123");
+        invalidAuthRequest = new PasswordAuthRequest("johndoe", "wrongpassword");
     }
 
     @Test

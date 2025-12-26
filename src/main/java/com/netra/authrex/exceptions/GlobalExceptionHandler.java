@@ -7,7 +7,7 @@ import com.netra.commons.exceptions.InvalidEnumException;
 import com.netra.commons.exceptions.ServiceUnavailableException;
 import com.netra.commons.exceptions.ResourceNotFoundException;
 import com.netra.commons.exceptions.ResourceAccessDeniedException;
-import com.netra.commons.external.service.client.TraceIdFilter;
+import com.netra.commons.trace.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

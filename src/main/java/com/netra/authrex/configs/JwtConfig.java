@@ -1,22 +1,24 @@
 package com.netra.authrex.configs;
 
 import com.netra.authrex.dtos.AuthUser;
+import com.netra.authrex.exceptions.TokenExchangeException;
 import com.netra.commons.models.Identity;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.time.LocalDateTime;
@@ -44,8 +46,29 @@ public class JwtConfig {
     private PrivateKey privateKey;
     private PublicKey publicKey;
 
-    public Resource getPublicKeyResource(){
-        return publicKeyResource;
+
+    public String retrievePublicKey(){
+        Resource resource = publicKeyResource;
+
+        try (var reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
+            return FileCopyUtils.copyToString(reader);
+        }catch (Exception ex){
+            throw new RuntimeException("can not retrieve public key at the moment");
+        }
+    }
+
+    public Claims parseToken(String token) {
+        try {
+            return Jwts.parser()
+                    .setSigningKey(getPublicKey())   // RSA public key
+                    .build()
+                    .parseClaimsJws(token)      // verifies signature
+                    .getBody();
+
+        } catch (JwtException e) {
+            // Signature invalid, expired, malformed, etc.
+            throw new TokenExchangeException("Invalid JWT");
+        }
     }
 
 
@@ -230,6 +253,10 @@ public class JwtConfig {
 
     }
 
+    public boolean isTokenExpired(Claims claims) {
+        return claims.getExpiration().before(new Date());
+    }
+
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
@@ -245,5 +272,6 @@ public class JwtConfig {
                 .parseClaimsJws(token)
                 .getBody();
     }
+
 
 }

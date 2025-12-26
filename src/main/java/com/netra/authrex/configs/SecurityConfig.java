@@ -1,5 +1,6 @@
 package com.netra.authrex.configs;
 
+import com.netra.authrex.services.CustomUserDetailsService;
 import com.netra.authrex.services.IdentityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -26,7 +27,7 @@ import org.springframework.security.web.header.writers.XXssProtectionHeaderWrite
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-    private final IdentityService userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
     private final JwtAuthEntryPoint jwtAuthEntryPoint;
     private final PasswordEncoder passwordEncoder;
 
