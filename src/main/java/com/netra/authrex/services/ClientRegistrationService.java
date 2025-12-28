@@ -38,7 +38,7 @@ public class ClientRegistrationService {
                 .clientCode(request.getClientCode())
                 .redirectUris(new HashSet<>(request.getRedirectUris()))
                 .scopes(new HashSet<>(request.getScopes()))
-                .authorizedGrantTypes(new HashSet<>(request.getAuthorizedGrantTypes()))
+                .authorizedPermissions(new HashSet<>(request.getAuthorizedGrantTypes()))
                 .accessTokenValidity(request.getAccessTokenValidity())
                 .refreshTokenValidity(request.getRefreshTokenValidity())
                 .build();

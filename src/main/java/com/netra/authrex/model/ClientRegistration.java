@@ -51,8 +51,8 @@ public class ClientRegistration {
         @ElementCollection(fetch = FetchType.EAGER)
         @CollectionTable(name = "client_grant_types",
                 joinColumns = @JoinColumn(name = "client_id"))
-        @Column(name = "grant_type")
-        private Set<String> authorizedGrantTypes = new HashSet<>();
+        @Column(name = "permissions")
+        private Set<String> authorizedPermissions = new HashSet<>();
 
         @Column(nullable = false)
         private boolean enabled = true;

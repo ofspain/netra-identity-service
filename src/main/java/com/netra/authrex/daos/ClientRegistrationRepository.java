@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface ClientRegistrationRepository
         extends JpaRepository<ClientRegistration, String> {
 
-    Optional<ClientRegistration> findByClientIdAndEnabledTrue(String clientId);
+    Optional<ClientRegistration> findByClientIdAndEnabledTrue(UUID clientId);
 
     boolean existsByClientId(UUID clientId);
 

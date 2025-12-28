@@ -117,11 +117,6 @@ public class AuthenticationService {
                     request.getClientSecret()
             );
 
-            // 2. Check if client is authorized for this grant type
-            if (!client.getAuthorizedGrantTypes().contains("client_credentials")) {
-                throw new AuthenticationException("Client not authorized for client_credentials grant");
-            }
-
             // 3. Validate requested scopes
             Set<String> requestedScopes = parseScopes(request.getScopes());
             Set<String> clientScopes = client.getScopes();
@@ -137,6 +132,7 @@ public class AuthenticationService {
             claims.put("grant_type", CLIENT_CREDENTIALS);
             claims.put("is_service_principal", true);
             claims.put("client_name", client.getClientName());
+            claims.put("client_permission", client.getAuthorizedPermissions());
 
             if (!requestedScopes.isEmpty()) {
                 claims.put("scope", String.join(" ", requestedScopes));
@@ -179,11 +175,6 @@ public class AuthenticationService {
                     request.getClientId(),
                     request.getClientSecret()
             );
-
-            // 2. Check if client is authorized for token exchange
-            if (!client.getAuthorizedGrantTypes().contains("token_exchange")) {
-                throw new AuthenticationException("Client not authorized for token exchange");
-            }
 
             // 3. Create token exchange request for the service
             TokenExchangeAuthRequest exchangeRequest = new TokenExchangeAuthRequest();
